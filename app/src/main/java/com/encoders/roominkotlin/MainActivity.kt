@@ -2,36 +2,73 @@ package com.encoders.roominkotlin
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
+import android.widget.EditText
 import android.widget.TextView
-import androidx.lifecycle.LiveData
+import androidx.appcompat.widget.AppCompatButton
 import androidx.lifecycle.Observer
-import androidx.room.Room
-import androidx.room.RoomDatabase
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.encoders.roominkotlin.Adapter.ContactListAdapter
+import com.encoders.roominkotlin.Adapter.onContactClickListner
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), onContactClickListner {
     private lateinit var textview: TextView
     private lateinit var database: ContactDatabase
+    private lateinit var save_user: AppCompatButton
+    private lateinit var phone_number: EditText
+    private lateinit var username: EditText
+    private lateinit var contact_list: RecyclerView
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        textview = findViewById(R.id.textview)
 
-        database = Room.databaseBuilder(
-            applicationContext, ContactDatabase::class.java,
-            "contact.db"
-        ).build()
+        save_user = findViewById(R.id.save_user)
+        phone_number = findViewById(R.id.phone_number)
+        username = findViewById(R.id.username)
 
-        GlobalScope.launch {
-            database.contactDao().insert(Contact(0,"Encoders Technology Solution","0123456789"))
+        contact_list = findViewById(R.id.contact_list)
 
+        database = ContactDatabase.getDatabase(this)
+        save_user.setOnClickListener {
+            GlobalScope.launch {
+                database.contactDao().insert(
+                    Contact(
+                        0, username.text.toString(),
+                        phone_number.text.toString()
+                    )
+                )
+
+            }
         }
 
+
         database.contactDao().get_Contact().observe(this, Observer {
-            textview.text = it.toString()
+            Load_Contacts(it)
+
         })
+
+
+    }
+
+
+    fun Load_Contacts(list: List<Contact>) {
+        contact_list.layoutManager =
+            LinearLayoutManager(
+                this,
+                LinearLayoutManager.VERTICAL,
+                false
+            )
+
+        val contactListAdapter =
+            ContactListAdapter(
+                list, this@MainActivity,
+            )
+        contact_list.adapter = contactListAdapter
+    }
+
+    override fun onContactClickListner(data: Contact, position: Int) {
 
     }
 }
